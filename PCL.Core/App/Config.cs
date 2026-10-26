@@ -276,6 +276,16 @@ public static partial class Config
             [ConfigItem<ColorTheme>("UiLightColor", ColorTheme.CatBlue)] public partial ColorTheme LightColor { get; set; }
 
             /// <summary>
+            /// 暗色自定义主题色（#RRGGBB），为空时使用预设配色主题。
+            /// </summary>
+            [ConfigItem<string>("UiDarkColorCustom", "", ConfigSource.Local)] public partial string DarkColorCustom { get; set; }
+
+            /// <summary>
+            /// 亮色自定义主题色（#RRGGBB），为空时使用预设配色主题。
+            /// </summary>
+            [ConfigItem<string>("UiLightColorCustom", "", ConfigSource.Local)] public partial string LightColorCustom { get; set; }
+
+            /// <summary>
             /// 窗口透明度。
             /// </summary>
             [ConfigItem<int>("UiLauncherTransparent", 600, ConfigSource.Local)] public partial int WindowOpacity { get; set; }

@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Windows.Media;
 using PCL.Core.App;
 using PCL.Core.App.Configuration;
 using PCL.Core.App.IoC;
@@ -34,14 +36,27 @@ public sealed partial class ThemeService
 
     [RegisterConfigEvent]
     public static ConfigEventRegistry OnColorThemeConfigChanged => new(
-        scope: [Config.Preference.Theme.DarkColorConfig, Config.Preference.Theme.LightColorConfig],
+        scope: [
+            Config.Preference.Theme.DarkColorConfig,
+            Config.Preference.Theme.LightColorConfig,
+            Config.Preference.Theme.DarkColorCustomConfig,
+            Config.Preference.Theme.LightColorCustomConfig
+        ],
         trigger: ConfigEvent.Update,
         handler: e =>
         {
             // ignore no change or non-current color theme change
             if (e.OldValue == e.Value) return;
-            if (IsDarkMode) { if (e.Item == Config.Preference.Theme.LightColorConfig) return; }
-            else { if (e.Item == Config.Preference.Theme.DarkColorConfig) return; }
+            if (IsDarkMode)
+            {
+                if (e.Item == Config.Preference.Theme.LightColorConfig ||
+                    e.Item == Config.Preference.Theme.LightColorCustomConfig) return;
+            }
+            else
+            {
+                if (e.Item == Config.Preference.Theme.DarkColorConfig ||
+                    e.Item == Config.Preference.Theme.DarkColorCustomConfig) return;
+            }
             // trigger color refresh
             if (Lifecycle.CurrentState > LifecycleState.Loading)
             {
@@ -150,8 +165,43 @@ public sealed partial class ThemeService
     /// </summary>
     public static (int Hue, double LightAdjust, double ChromaAdjust) GetCurrentThemeArgs()
     {
-        var theme = CurrentTheme;
-        return theme switch
+        var theme = Config.Preference.Theme;
+        var customColor = IsDarkMode ? theme.DarkColorCustom : theme.LightColorCustom;
+        if (TryParseHexColor(customColor, out var color)) return GetArgsFromColor(color);
+        return GetPresetThemeArgs(CurrentTheme);
+    }
+
+    /// <summary>
+    /// 获取指定配色模式当前实际显示的主题色，用于 UI 展示。
+    /// </summary>
+    /// <param name="darkMode">是否获取暗色模式的配色。</param>
+    public static Color GetThemeDisplayColor(bool darkMode)
+    {
+        var theme = Config.Preference.Theme;
+        if (TryParseHexColor(darkMode ? theme.DarkColorCustom : theme.LightColorCustom, out var color))
+            return color;
+        var tone = darkMode ? ToneProfiles.Dark : ToneProfiles.Light;
+        var preset = GetPresetThemeArgs(darkMode ? theme.DarkColor : theme.LightColor);
+        return LabColor.FromLch(_AdjustLinear(tone.L4, preset.LightAdjust),
+            _AdjustLinear(tone.C4, preset.ChromaAdjust), preset.Hue).ToWpfColor();
+    }
+
+    /// <summary>
+    /// 解析 <c>#RRGGBB</c> 格式的颜色字符串。
+    /// </summary>
+    public static bool TryParseHexColor(string? text, out Color color)
+    {
+        color = default;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var value = text.Trim().TrimStart('#');
+        if (value.Length != 6) return false;
+        if (!int.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var rgb)) return false;
+        color = Color.FromRgb((byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
+        return true;
+    }
+
+    private static (int Hue, double LightAdjust, double ChromaAdjust) GetPresetThemeArgs(ColorTheme theme)
+        => theme switch
         {
             ColorTheme.SkyBlue => (235, 0.36, 0.2),
             ColorTheme.CatBlue => (255, 0, -0.2),
@@ -163,6 +213,30 @@ public sealed partial class ThemeService
             _ => throw new IndexOutOfRangeException($"Invalid theme index: {(int)theme}")
 #endif
         };
+
+    private static (int Hue, double LightAdjust, double ChromaAdjust) GetArgsFromColor(Color color)
+    {
+        var lab = LabColor.FromRgb(color.R, color.G, color.B);
+        var chroma = Math.Sqrt(lab.A * lab.A + lab.B * lab.B);
+        var hue = Math.Atan2(lab.B, lab.A) * 180d / Math.PI;
+        if (hue < 0d) hue += 360d;
+        var tone = CurrentTone;
+        return ((int)Math.Round(hue) % 360, _InverseAdjustLinear(tone.L4, lab.L),
+            _InverseAdjustLinear(tone.C4, chroma));
+    }
+
+    /// <summary>
+    /// 计算 <see cref="_AdjustLinear" /> 的反函数。
+    /// </summary>
+    private static double _InverseAdjustLinear(double value, double target)
+    {
+        value = Math.Clamp(value, 0d, 1d);
+        target = Math.Clamp(target, 0d, 1d);
+        if (Math.Abs(target - value) < 1e-6d) return 0d;
+        var adjust = target > value
+            ? 1d - value <= 1e-6d ? 0d : (target - value) / (1d - value)
+            : value <= 1e-6d ? 0d : (target - value) / value;
+        return Math.Clamp(adjust, -1d, 1d);
     }
 
     private static double _AdjustLinear(double value, double adjustment)

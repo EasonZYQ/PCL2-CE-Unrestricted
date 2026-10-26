@@ -2,9 +2,12 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
 using PCL.Core.App;
 using PCL.Core.App.Configuration;
 using PCL.Core.UI;
+using PCL.Core.UI.Theme;
 using PCL.Core.Utils;
 using PCL.Core.App.Localization;
 
@@ -12,10 +15,6 @@ namespace PCL;
 
 public partial class PageSetupUI
 {
-    public string[] ThemeColors => Basics.IsAprilFool 
-        ? [Lang.Text("Setup.Ui.Theme.Color.SkyBlue"), Lang.Text("Setup.Ui.Theme.Color.CatBlue"), Lang.Text("Setup.Ui.Theme.Color.CrashBlue"), Lang.Text("Setup.Ui.Theme.Color.Hmcl")]
-        : [Lang.Text("Setup.Ui.Theme.Color.SkyBlue"), Lang.Text("Setup.Ui.Theme.Color.CatBlue"), Lang.Text("Setup.Ui.Theme.Color.CrashBlue")];
-    
     public new bool isLoaded;
 
     public PageSetupUI()
@@ -52,9 +51,8 @@ public partial class PageSetupUI
             SliderLauncherOpacity.Value = Config.Preference.Theme.WindowOpacity;
             CheckLauncherLogo.Checked = Config.Preference.ShowStartupLogo;
             ComboDarkMode.SelectedIndex = (int)Config.Preference.Theme.ColorMode;
-            ComboDarkColor.SelectedIndex = (int)Config.Preference.Theme.DarkColor;
-            ComboLightColor.SelectedIndex = (int)Config.Preference.Theme.LightColor;
             CheckShowLaunchingHint.Checked = Config.Preference.ShowLaunchingHint;
+            RefreshThemeColorSwatches();
 
             // 字体设置
             ComboUiFont.SelectedFontTag = Config.Preference.Font;
@@ -660,11 +658,38 @@ public partial class PageSetupUI
     }
 
     // 主题
-    private void ThemeColor_Change(object senderRaw, SelectionChangedEventArgs e)
+    private void BtnThemeColor_Click(object sender, MouseButtonEventArgs e)
     {
-        var sender = (MyComboBox)senderRaw;
-        SetByTag(sender.Tag?.ToString(), sender.SelectedIndex);
+        if (sender is not FrameworkElement { Tag: string configKey }) return;
+        var isDark = configKey == "UiDarkColorCustom";
+        var current = ThemeService.GetThemeDisplayColor(isDark);
+        using var dialog = new System.Windows.Forms.ColorDialog
+        {
+            Color = System.Drawing.Color.FromArgb(current.R, current.G, current.B),
+            FullOpen = true,
+            AnyColor = true
+        };
+        var owner = new WindowHandleWrapper(new WindowInteropHelper(ModMain.frmMain).Handle);
+        if (dialog.ShowDialog(owner) != System.Windows.Forms.DialogResult.OK) return;
+        var hex = $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}";
+        SetByTag(configKey, hex);
+        RefreshThemeColorSwatches();
         ThemeManager.ThemeRefresh();
+    }
+
+    private void RefreshThemeColorSwatches()
+    {
+        var light = ThemeService.GetThemeDisplayColor(false);
+        PanLightColorPreview.Background = new SolidColorBrush(light);
+        TextLightColor.Text = $"#{light.R:X2}{light.G:X2}{light.B:X2}";
+        var dark = ThemeService.GetThemeDisplayColor(true);
+        PanDarkColorPreview.Background = new SolidColorBrush(dark);
+        TextDarkColor.Text = $"#{dark.R:X2}{dark.G:X2}{dark.B:X2}";
+    }
+
+    private sealed class WindowHandleWrapper(IntPtr handle) : System.Windows.Forms.IWin32Window
+    {
+        public IntPtr Handle => handle;
     }
 
     // 赞助
