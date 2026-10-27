@@ -2,7 +2,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Interop;
 using System.Windows.Media;
 using PCL.Core.App;
 using PCL.Core.App.Configuration;
@@ -39,8 +38,6 @@ public partial class PageSetupUI
         isLoaded = true;
 
         SliderLoad();
-
-        PanLauncherHide.Visibility = Visibility.Visible;
     }
 
     public void Reload()
@@ -52,7 +49,8 @@ public partial class PageSetupUI
             CheckLauncherLogo.Checked = Config.Preference.ShowStartupLogo;
             ComboDarkMode.SelectedIndex = (int)Config.Preference.Theme.ColorMode;
             CheckShowLaunchingHint.Checked = Config.Preference.ShowLaunchingHint;
-            RefreshThemeColorSwatches();
+            PickerLightColor.SelectedColor = ThemeService.GetThemeDisplayColor(false);
+            PickerDarkColor.SelectedColor = ThemeService.GetThemeDisplayColor(true);
 
             // 字体设置
             ComboUiFont.SelectedFontTag = Config.Preference.Font;
@@ -658,44 +656,28 @@ public partial class PageSetupUI
     }
 
     // 主题
-    private void BtnThemeColor_Click(object sender, MouseButtonEventArgs e)
+    private void PickerLightColor_ColorCommitted(object sender, Color color) =>
+        ApplyCustomThemeColor(false, color);
+
+    private void PickerDarkColor_ColorCommitted(object sender, Color color) =>
+        ApplyCustomThemeColor(true, color);
+
+    private void PickerLightColor_ResetClicked(object sender, EventArgs e) => ResetThemeColor(false);
+
+    private void PickerDarkColor_ResetClicked(object sender, EventArgs e) => ResetThemeColor(true);
+
+    private void ApplyCustomThemeColor(bool darkMode, Color color)
     {
-        if (sender is not FrameworkElement { Tag: string configKey }) return;
-        var isDark = configKey == "UiDarkColorCustom";
-        var current = ThemeService.GetThemeDisplayColor(isDark);
-        using var dialog = new System.Windows.Forms.ColorDialog
-        {
-            Color = System.Drawing.Color.FromArgb(current.R, current.G, current.B),
-            FullOpen = true,
-            AnyColor = true
-        };
-        var owner = new WindowHandleWrapper(new WindowInteropHelper(ModMain.frmMain).Handle);
-        if (dialog.ShowDialog(owner) != System.Windows.Forms.DialogResult.OK) return;
-        var hex = $"#{dialog.Color.R:X2}{dialog.Color.G:X2}{dialog.Color.B:X2}";
-        SetByTag(configKey, hex);
-        RefreshThemeColorSwatches();
+        SetByTag(darkMode ? "UiDarkColorCustom" : "UiLightColorCustom",
+            $"#{color.R:X2}{color.G:X2}{color.B:X2}");
         ThemeManager.ThemeRefresh();
     }
 
-    private void RefreshThemeColorSwatches()
+    private void ResetThemeColor(bool darkMode)
     {
-        var light = ThemeService.GetThemeDisplayColor(false);
-        PanLightColorPreview.Background = new SolidColorBrush(light);
-        TextLightColor.Text = $"#{light.R:X2}{light.G:X2}{light.B:X2}";
-        var dark = ThemeService.GetThemeDisplayColor(true);
-        PanDarkColorPreview.Background = new SolidColorBrush(dark);
-        TextDarkColor.Text = $"#{dark.R:X2}{dark.G:X2}{dark.B:X2}";
-    }
-
-    private sealed class WindowHandleWrapper(IntPtr handle) : System.Windows.Forms.IWin32Window
-    {
-        public IntPtr Handle => handle;
-    }
-
-    // 赞助
-    private void BtnLauncherDonate_Click(object sender, MouseButtonEventArgs e)
-    {
-        ModBase.OpenWebsite("https://afdian.com/a/LTCat");
+        SetByTag(darkMode ? "UiDarkColorCustom" : "UiLightColorCustom", "");
+        (darkMode ? PickerDarkColor : PickerLightColor).SelectedColor = ThemeService.GetThemeDisplayColor(darkMode);
+        ThemeManager.ThemeRefresh();
     }
 
     // 滑动条

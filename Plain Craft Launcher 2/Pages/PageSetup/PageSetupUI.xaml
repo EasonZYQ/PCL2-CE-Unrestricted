@@ -33,58 +33,42 @@
                                             Change="SliderChange" />
                         </Grid>
                         <Border Background="{DynamicResource ColorBrushToolTip}" Margin="0,5,0,12" CornerRadius="4"
-                                Name="PanLauncherHide" Visibility="Collapsed">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20">
-                                <TextBlock Text="{DynamicResource Setup.Ui.Basic.BlueHint}" FontSize="13" Margin="0,0,0,0"
-                                           TextWrapping="Wrap" />
-                                <local:MyButton Height="35" x:Name="BtnLauncherDonate" MinWidth="140" Text="{DynamicResource Setup.Ui.Basic.GetSnapshot}"
-                                                Padding="13,0" HorizontalAlignment="Center" Margin="0,9,0,0"
-                                                ColorType="Highlight" Click="BtnLauncherDonate_Click" />
-                            </StackPanel>
+                                Name="PanThemeColorPicker">
+                            <Grid Margin="16,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="20" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{DynamicResource Setup.Ui.Theme.LightColor}" FontSize="12"
+                                               Foreground="{DynamicResource ColorBrushGray2}" Margin="1,0,0,6" />
+                                    <local:MyColorPicker x:Name="PickerLightColor"
+                                                         ColorCommitted="PickerLightColor_ColorCommitted"
+                                                         ResetClicked="PickerLightColor_ResetClicked" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="{DynamicResource Setup.Ui.Theme.DarkColor}" FontSize="12"
+                                               Foreground="{DynamicResource ColorBrushGray2}" Margin="1,0,0,6" />
+                                    <local:MyColorPicker x:Name="PickerDarkColor"
+                                                         ColorCommitted="PickerDarkColor_ColorCommitted"
+                                                         ResetClicked="PickerDarkColor_ResetClicked" />
+                                </StackPanel>
+                            </Grid>
                         </Border>
                         <Grid Height="28" Margin="0,0,0,7">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="Name1" />
                                 <ColumnDefinition />
-                                <ColumnDefinition Width="92" SharedSizeGroup="SubName" />
-                                <ColumnDefinition />
-                                <ColumnDefinition SharedSizeGroup="SubName" />
-                                <ColumnDefinition />
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left" Text="{DynamicResource Setup.Ui.Theme.Title}" />
-                            <local:MyComboBox Grid.Column="1" x:Name="ComboDarkMode" Tag="UiDarkMode"
-                                              SelectionChanged="ComboChange">
+                            <TextBlock Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Left"
+                                       Text="{DynamicResource Setup.Ui.Theme.Title}" Margin="0,0,20,0" />
+                            <local:MyComboBox Grid.Column="1" x:Name="ComboDarkMode" Tag="UiDarkMode" Width="180"
+                                              HorizontalAlignment="Left" SelectionChanged="ComboChange">
                                 <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Theme.Light}" />
                                 <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Theme.Dark}" />
                                 <local:MyComboBoxItem Content="{DynamicResource Setup.Ui.Theme.FollowSystem}" /> <!-- default -->
                             </local:MyComboBox>
-                            <TextBlock Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{DynamicResource Setup.Ui.Theme.LightColor}"/>
-                            <Border Grid.Column="3" x:Name="BtnLightColor" Tag="UiLightColorCustom" Height="28" CornerRadius="3"
-                                    BorderThickness="1" BorderBrush="{DynamicResource ColorBrushBg0}"
-                                    Background="{DynamicResource ColorBrushHalfWhite}" Cursor="Hand"
-                                    ToolTip="{DynamicResource Setup.Ui.Theme.LightColor.ToolTip}"
-                                    MouseLeftButtonUp="BtnThemeColor_Click">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="7,0">
-                                    <Border x:Name="PanLightColorPreview" Width="14" Height="14" CornerRadius="2" Margin="0,0,6,0"
-                                            BorderThickness="1" BorderBrush="{DynamicResource ColorBrushGray4}" Background="#7C9CD6"/>
-                                    <TextBlock x:Name="TextLightColor" FontSize="13" VerticalAlignment="Center"
-                                               Foreground="{DynamicResource ColorBrushBg0}" Text="#7C9CD6"/>
-                                </StackPanel>
-                            </Border>
-                            <TextBlock Grid.Column="4" VerticalAlignment="Center" HorizontalAlignment="Center" Text="{DynamicResource Setup.Ui.Theme.DarkColor}"/>
-                            <Border Grid.Column="5" x:Name="BtnDarkColor" Tag="UiDarkColorCustom" Height="28" CornerRadius="3"
-                                    BorderThickness="1" BorderBrush="{DynamicResource ColorBrushBg0}"
-                                    Background="{DynamicResource ColorBrushHalfWhite}" Cursor="Hand"
-                                    ToolTip="{DynamicResource Setup.Ui.Theme.DarkColor.ToolTip}"
-                                    MouseLeftButtonUp="BtnThemeColor_Click">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="7,0">
-                                    <Border x:Name="PanDarkColorPreview" Width="14" Height="14" CornerRadius="2" Margin="0,0,6,0"
-                                            BorderThickness="1" BorderBrush="{DynamicResource ColorBrushGray4}" Background="#7C9CD6"/>
-                                    <TextBlock x:Name="TextDarkColor" FontSize="13" VerticalAlignment="Center"
-                                               Foreground="{DynamicResource ColorBrushBg0}" Text="#7C9CD6"/>
-                                </StackPanel>
-                            </Border>
-
                         </Grid>
                         <local:MyCheckBox Text="{DynamicResource Setup.Ui.Basic.ShowLogo}" Margin="-1,0,0,7" Height="22"
                                           x:Name="CheckLauncherLogo" Tag="UiLauncherLogo" Change="CheckBoxChange" />
