@@ -765,8 +765,16 @@ public partial class PageSetupUI
     {
         _selectedSavedIndex = index;
         if (TryGetSelectedSavedColor(out var color))
+        {
             (_activePicker ?? PickerDarkColor).SelectedColor = color;
-        RefreshSavedColorCircles();
+            RefreshSavedColorCircles();
+            return;
+        }
+
+        if (index != _savedColors.Count) return;
+        // 点击末尾的空圆圈时，直接把当前取色器的颜色存入
+        UpdateSelectedSavedColor((_activePicker ?? PickerDarkColor).SelectedColor);
+        SaveSavedColors();
     }
 
     private void UpdateSelectedSavedColor(Color color)
