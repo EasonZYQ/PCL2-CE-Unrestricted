@@ -34,27 +34,57 @@
                         </Grid>
                         <Border Background="{DynamicResource ColorBrushToolTip}" Margin="0,5,0,12" CornerRadius="4"
                                 Name="PanThemeColorPicker">
-                            <Grid Margin="16,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="20" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="{DynamicResource Setup.Ui.Theme.LightColor}" FontSize="12"
-                                               Foreground="{DynamicResource ColorBrushGray2}" Margin="1,0,0,6" />
-                                    <local:MyColorPicker x:Name="PickerLightColor"
-                                                         ColorCommitted="PickerLightColor_ColorCommitted"
-                                                         ResetClicked="PickerLightColor_ResetClicked" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="{DynamicResource Setup.Ui.Theme.DarkColor}" FontSize="12"
-                                               Foreground="{DynamicResource ColorBrushGray2}" Margin="1,0,0,6" />
-                                    <local:MyColorPicker x:Name="PickerDarkColor"
-                                                         ColorCommitted="PickerDarkColor_ColorCommitted"
-                                                         ResetClicked="PickerDarkColor_ResetClicked" />
-                                </StackPanel>
-                            </Grid>
+                            <StackPanel Margin="16,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="20" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock x:Name="LabLightColorTitle" Text="{DynamicResource Setup.Ui.Theme.LightColor}"
+                                                   FontSize="12" Foreground="{DynamicResource ColorBrushGray2}" Margin="1,0,0,6" />
+                                        <local:MyColorPicker x:Name="PickerLightColor"
+                                                             Activated="PickerLightColor_Activated"
+                                                             ColorChanging="PickerLightColor_ColorChanging"
+                                                             ColorCommitted="PickerLightColor_ColorCommitted"
+                                                             ResetClicked="PickerLightColor_ResetClicked" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock x:Name="LabDarkColorTitle" Text="{DynamicResource Setup.Ui.Theme.DarkColor}"
+                                                   FontSize="12" Foreground="{DynamicResource ColorBrushGray2}" Margin="1,0,0,6" />
+                                        <local:MyColorPicker x:Name="PickerDarkColor"
+                                                             Activated="PickerDarkColor_Activated"
+                                                             ColorChanging="PickerDarkColor_ColorChanging"
+                                                             ColorCommitted="PickerDarkColor_ColorCommitted"
+                                                             ResetClicked="PickerDarkColor_ResetClicked" />
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Margin="0,12,0,0">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Border x:Name="BtnSavedColorApply" Width="34" Height="34" CornerRadius="17"
+                                            HorizontalAlignment="Left" Background="{DynamicResource ColorBrushHalfWhite}"
+                                            BorderBrush="{DynamicResource ColorBrushBg0}" BorderThickness="1" Cursor="Hand"
+                                            ToolTip="{DynamicResource Setup.Ui.Theme.Color.Apply}"
+                                            MouseLeftButtonUp="BtnSavedColorApply_Click">
+                                        <TextBlock Text="{DynamicResource Setup.Ui.Theme.Color.Apply}" FontSize="11"
+                                                   Foreground="{DynamicResource ColorBrushBg0}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <Border x:Name="BtnSavedColorDelete" Width="34" Height="34" CornerRadius="17"
+                                            HorizontalAlignment="Right" Background="{DynamicResource ColorBrushHalfWhite}"
+                                            BorderBrush="{DynamicResource ColorBrushGray4}" BorderThickness="1" Cursor="Hand"
+                                            ToolTip="{DynamicResource Setup.Ui.Theme.Color.Delete}"
+                                            MouseLeftButtonUp="BtnSavedColorDelete_Click">
+                                        <TextBlock Text="-" FontSize="16" Foreground="{DynamicResource ColorBrushGray2}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <WrapPanel x:Name="PanSavedColors" Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0" />
+                                </Grid>
+                            </StackPanel>
                         </Border>
                         <Grid Height="28" Margin="0,0,0,7">
                             <Grid.ColumnDefinitions>

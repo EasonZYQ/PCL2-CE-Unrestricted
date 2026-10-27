@@ -32,6 +32,16 @@ public partial class MyColorPicker
     public event EventHandler<Color>? ColorCommitted;
 
     /// <summary>
+    ///     用户拖动或输入颜色时实时触发。
+    /// </summary>
+    public event EventHandler<Color>? ColorChanging;
+
+    /// <summary>
+    ///     用户开始操作该取色器时触发。
+    /// </summary>
+    public event EventHandler? Activated;
+
+    /// <summary>
     ///     点击“恢复初始颜色”后触发。
     /// </summary>
     public event EventHandler? ResetClicked;
@@ -76,6 +86,7 @@ public partial class MyColorPicker
 
     private void PanSv_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        Activated?.Invoke(this, EventArgs.Empty);
         PanSv.CaptureMouse();
         UpdateSvFromPoint(e.GetPosition(PanSv));
         e.Handled = true;
@@ -101,10 +112,12 @@ public partial class MyColorPicker
         _saturation = Math.Clamp((position.X - ThumbSv.Width / 2d) / width, 0d, 1d);
         _value = 1d - Math.Clamp((position.Y - ThumbSv.Height / 2d) / height, 0d, 1d);
         RefreshUi();
+        ColorChanging?.Invoke(this, ColorFromHsv(_hue, _saturation, _value));
     }
 
     private void PanHue_MouseDown(object sender, MouseButtonEventArgs e)
     {
+        Activated?.Invoke(this, EventArgs.Empty);
         PanHue.CaptureMouse();
         UpdateHueFromPoint(e.GetPosition(PanHue));
         e.Handled = true;
@@ -128,14 +141,17 @@ public partial class MyColorPicker
         var width = Math.Max(1d, PanHue.ActualWidth - ThumbHue.Width);
         _hue = Math.Clamp((position.X - ThumbHue.Width / 2d) / width, 0d, 1d) * 360d;
         RefreshUi();
+        ColorChanging?.Invoke(this, ColorFromHsv(_hue, _saturation, _value));
     }
 
     private void TextHex_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_updatingUi) return;
+        Activated?.Invoke(this, EventArgs.Empty);
         if (!PCL.Core.UI.Theme.ThemeService.TryParseHexColor(TextHex.Text, out var color)) return;
         if (color == SelectedColor) return;
         SelectedColor = color;
+        ColorChanging?.Invoke(this, color);
         ColorCommitted?.Invoke(this, color);
     }
 
@@ -148,6 +164,7 @@ public partial class MyColorPicker
 
     private void BtnReset_Click(object sender, MouseButtonEventArgs e)
     {
+        Activated?.Invoke(this, EventArgs.Empty);
         ResetClicked?.Invoke(this, EventArgs.Empty);
     }
 

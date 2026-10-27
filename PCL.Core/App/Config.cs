@@ -286,6 +286,11 @@ public static partial class Config
             [ConfigItem<string>("UiLightColorCustom", "", ConfigSource.Local)] public partial string LightColorCustom { get; set; }
 
             /// <summary>
+            /// 颜色储存中的常用颜色列表，以逗号分隔的 #RRGGBB 表示。
+            /// </summary>
+            [ConfigItem<string>("UiThemeColorPalette", "", ConfigSource.Local)] public partial string ThemeColorPalette { get; set; }
+
+            /// <summary>
             /// 窗口透明度。
             /// </summary>
             [ConfigItem<int>("UiLauncherTransparent", 600, ConfigSource.Local)] public partial int WindowOpacity { get; set; }
