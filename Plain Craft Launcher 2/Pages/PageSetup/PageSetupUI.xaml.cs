@@ -20,6 +20,7 @@ public partial class PageSetupUI
     private readonly List<string> _savedColors = [];
     private readonly List<Ellipse> _savedColorEllipses = [];
     private int _selectedSavedIndex = -1;
+    private Ellipse? _currentColorEllipse;
     private MyColorPicker? _activePicker;
 
     public PageSetupUI()
@@ -59,6 +60,7 @@ public partial class PageSetupUI
             PickerDarkColor.SelectedColor = ThemeService.GetThemeDisplayColor(true);
             LoadSavedColors();
             SetActivePicker(ThemeManager.IsDarkMode ? PickerDarkColor : PickerLightColor);
+            RefreshCurrentColorIndicator();
 
             // 字体设置
             ComboUiFont.SelectedFontTag = Config.Preference.Font;
@@ -680,18 +682,21 @@ public partial class PageSetupUI
     private void PickerLightColor_ColorChanging(object sender, Color color)
     {
         SetActivePicker(PickerLightColor);
+        SetCurrentColorIndicator(color);
         UpdateSelectedSavedColor(color);
     }
 
     private void PickerDarkColor_ColorChanging(object sender, Color color)
     {
         SetActivePicker(PickerDarkColor);
+        SetCurrentColorIndicator(color);
         UpdateSelectedSavedColor(color);
     }
 
     private void PickerLightColor_ColorCommitted(object sender, Color color)
     {
         SetActivePicker(PickerLightColor);
+        SetCurrentColorIndicator(color);
         UpdateSelectedSavedColor(color);
         SaveSavedColors();
         ApplyCustomThemeColor(false, color);
@@ -700,6 +705,7 @@ public partial class PageSetupUI
     private void PickerDarkColor_ColorCommitted(object sender, Color color)
     {
         SetActivePicker(PickerDarkColor);
+        SetCurrentColorIndicator(color);
         UpdateSelectedSavedColor(color);
         SaveSavedColors();
         ApplyCustomThemeColor(true, color);
@@ -719,7 +725,9 @@ public partial class PageSetupUI
     private void ResetThemeColor(bool darkMode)
     {
         SetByTag(darkMode ? "UiDarkColorCustom" : "UiLightColorCustom", "");
-        (darkMode ? PickerDarkColor : PickerLightColor).SelectedColor = ThemeService.GetThemeDisplayColor(darkMode);
+        var picker = darkMode ? PickerDarkColor : PickerLightColor;
+        picker.SelectedColor = ThemeService.GetThemeDisplayColor(darkMode);
+        SetCurrentColorIndicator(picker.SelectedColor);
         ThemeManager.ThemeRefresh();
     }
 
@@ -732,41 +740,24 @@ public partial class PageSetupUI
             lightActive ? "ColorBrushBg0" : "ColorBrushGray2");
         LabDarkColorTitle.SetResourceReference(TextBlock.ForegroundProperty,
             lightActive ? "ColorBrushGray2" : "ColorBrushBg0");
+        RefreshCurrentColorIndicator();
     }
 
     // 颜色储存
-    private void BtnSavedColorApply_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (!TryGetSelectedSavedColor(out var color)) return;
-        var picker = _activePicker ?? PickerDarkColor;
-        picker.SelectedColor = color;
-        ApplyCustomThemeColor(ReferenceEquals(picker, PickerDarkColor), color);
-        e.Handled = true;
-    }
-
-    private void BtnSavedColorDelete_Click(object sender, MouseButtonEventArgs e)
-    {
-        if (_selectedSavedIndex < 0 || _selectedSavedIndex >= _savedColors.Count) return;
-        _savedColors.RemoveAt(_selectedSavedIndex);
-        _selectedSavedIndex = -1;
-        SaveSavedColors();
-        RefreshSavedColorCircles();
-        e.Handled = true;
-    }
-
-    private bool TryGetSelectedSavedColor(out Color color)
+    private bool TryGetSavedColor(int index, out Color color)
     {
         color = default;
-        return _selectedSavedIndex >= 0 && _selectedSavedIndex < _savedColors.Count &&
-               ThemeService.TryParseHexColor(_savedColors[_selectedSavedIndex], out color);
+        return index >= 0 && index < _savedColors.Count &&
+               ThemeService.TryParseHexColor(_savedColors[index], out color);
     }
 
     private void SelectSavedColor(int index)
     {
         _selectedSavedIndex = index;
-        if (TryGetSelectedSavedColor(out var color))
+        if (TryGetSavedColor(index, out var color))
         {
             (_activePicker ?? PickerDarkColor).SelectedColor = color;
+            SetCurrentColorIndicator(color);
             RefreshSavedColorCircles();
             return;
         }
@@ -795,6 +786,27 @@ public partial class PageSetupUI
         }
     }
 
+    private void ApplySavedColor(int index)
+    {
+        if (!TryGetSavedColor(index, out var color)) return;
+        _selectedSavedIndex = index;
+        var picker = _activePicker ?? PickerDarkColor;
+        picker.SelectedColor = color;
+        ApplyCustomThemeColor(ReferenceEquals(picker, PickerDarkColor), color);
+        SetCurrentColorIndicator(color);
+        RefreshSavedColorCircles();
+    }
+
+    private void DeleteSavedColor(int index)
+    {
+        if (index < 0 || index >= _savedColors.Count) return;
+        _savedColors.RemoveAt(index);
+        if (_selectedSavedIndex == index) _selectedSavedIndex = -1;
+        else if (_selectedSavedIndex > index) _selectedSavedIndex--;
+        SaveSavedColors();
+        RefreshSavedColorCircles();
+    }
+
     private void LoadSavedColors()
     {
         _savedColors.Clear();
@@ -812,58 +824,155 @@ public partial class PageSetupUI
         Config.Preference.Theme.ThemeColorPalette = string.Join(",", _savedColors);
     }
 
+    private void SetCurrentColorIndicator(Color color)
+    {
+        if (_currentColorEllipse is null) return;
+        _currentColorEllipse.Fill = new SolidColorBrush(color);
+    }
+
+    private void RefreshCurrentColorIndicator()
+    {
+        if (_activePicker is not null) SetCurrentColorIndicator(_activePicker.SelectedColor);
+    }
+
     private void RefreshSavedColorCircles()
     {
         if (PanSavedColors is null) return;
         PanSavedColors.Children.Clear();
         _savedColorEllipses.Clear();
+        _currentColorEllipse = null;
+
+        var current = CreatePaletteItem(-1, null, true);
+        _currentColorEllipse = current.Circle;
+        PanSavedColors.Children.Add(current.Item);
+
         for (var i = 0; i < _savedColors.Count; i++)
         {
-            var circle = CreateSavedColorCircle(i, _savedColors[i]);
-            _savedColorEllipses.Add(circle);
-            PanSavedColors.Children.Add(circle);
+            var item = CreatePaletteItem(i, _savedColors[i], false);
+            _savedColorEllipses.Add(item.Circle);
+            PanSavedColors.Children.Add(item.Item);
         }
 
-        PanSavedColors.Children.Add(CreateSavedColorCircle(_savedColors.Count, null));
-        UpdateSavedColorButtons();
+        PanSavedColors.Children.Add(CreatePaletteItem(_savedColors.Count, null, false).Item);
     }
 
-    private Ellipse CreateSavedColorCircle(int index, string? hex)
+    private (FrameworkElement Item, Ellipse Circle) CreatePaletteItem(int index, string? hex, bool isCurrent)
     {
-        var isSelected = index == _selectedSavedIndex;
+        var panel = new Grid { Width = 64, Margin = new Thickness(0, 0, 4, 0) };
+        panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(28) });
+        panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        panel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+        if (!isCurrent)
+        {
+            var canUse = hex is not null;
+            var actions = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Center
+            };
+            var apply = CreateSmallActionButton(Lang.Text("Setup.Ui.Theme.Color.Apply"), canUse,
+                () => ApplySavedColor(index), 9d);
+            apply.Margin = new Thickness(0, 0, 4, 0);
+            apply.ToolTip = Lang.Text("Setup.Ui.Theme.Color.Apply");
+            actions.Children.Add(apply);
+            var delete = CreateSmallActionButton("-", canUse, () => DeleteSavedColor(index), 13d);
+            delete.ToolTip = Lang.Text("Setup.Ui.Theme.Color.Delete");
+            actions.Children.Add(delete);
+            Grid.SetRow(actions, 0);
+            panel.Children.Add(actions);
+        }
+
+        var isSelected = !isCurrent && index == _selectedSavedIndex;
         var circle = new Ellipse
         {
             Width = 24,
             Height = 24,
-            Margin = new Thickness(0, 0, 8, 0),
-            Cursor = Cursors.Hand,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
             StrokeThickness = isSelected ? 2d : 1d,
             ToolTip = hex
         };
         circle.SetResourceReference(Shape.StrokeProperty, isSelected ? "ColorBrushBg0" : "ColorBrushGray5");
-        if (hex is not null && ThemeService.TryParseHexColor(hex, out var color))
+        if (isCurrent)
+        {
+            circle.Fill = new SolidColorBrush(_activePicker?.SelectedColor ??
+                                              ThemeService.GetThemeDisplayColor(ThemeManager.IsDarkMode));
+        }
+        else if (hex is not null && ThemeService.TryParseHexColor(hex, out var color))
+        {
             circle.Fill = new SolidColorBrush(color);
+            circle.Cursor = Cursors.Hand;
+            circle.MouseLeftButtonUp += (_, e) =>
+            {
+                SelectSavedColor(index);
+                e.Handled = true;
+            };
+        }
         else
         {
             circle.SetResourceReference(Shape.FillProperty, "ColorBrushGray6");
             circle.StrokeDashArray = new DoubleCollection { 2d, 2d };
+            circle.Cursor = Cursors.Hand;
+            circle.MouseLeftButtonUp += (_, e) =>
+            {
+                SelectSavedColor(index);
+                e.Handled = true;
+            };
         }
 
-        circle.MouseLeftButtonUp += (_, e) =>
+        Grid.SetRow(circle, 1);
+        panel.Children.Add(circle);
+
+        if (isCurrent)
         {
-            SelectSavedColor(index);
-            e.Handled = true;
-        };
-        return circle;
+            var label = new TextBlock
+            {
+                Text = Lang.Text("Setup.Ui.Theme.Color.Current"),
+                FontSize = 10,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(0, 4, 0, 0),
+                TextWrapping = TextWrapping.Wrap
+            };
+            label.SetResourceReference(TextBlock.ForegroundProperty, "ColorBrushGray2");
+            Grid.SetRow(label, 2);
+            panel.Children.Add(label);
+        }
+
+        return (panel, circle);
     }
 
-    private void UpdateSavedColorButtons()
+    private FrameworkElement CreateSmallActionButton(string text, bool enabled, Action action, double fontSize)
     {
-        var canUse = _selectedSavedIndex >= 0 && _selectedSavedIndex < _savedColors.Count;
-        BtnSavedColorApply.Opacity = canUse ? 1d : 0.35d;
-        BtnSavedColorApply.IsHitTestVisible = canUse;
-        BtnSavedColorDelete.Opacity = canUse ? 1d : 0.35d;
-        BtnSavedColorDelete.IsHitTestVisible = canUse;
+        var label = new TextBlock
+        {
+            Text = text,
+            FontSize = fontSize,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        label.SetResourceReference(TextBlock.ForegroundProperty, enabled ? "ColorBrushBg0" : "ColorBrushGray2");
+        var button = new Border
+        {
+            Width = 28,
+            Height = 28,
+            CornerRadius = new CornerRadius(14),
+            BorderThickness = new Thickness(1),
+            Cursor = enabled ? Cursors.Hand : Cursors.Arrow,
+            Child = label
+        };
+        button.SetResourceReference(Border.BackgroundProperty, "ColorBrushHalfWhite");
+        button.SetResourceReference(Border.BorderBrushProperty, enabled ? "ColorBrushBg0" : "ColorBrushGray4");
+        if (enabled)
+            button.MouseLeftButtonUp += (_, e) =>
+            {
+                action();
+                e.Handled = true;
+            };
+        else
+            button.Opacity = 0.35d;
+        return button;
     }
 
     // 滑动条

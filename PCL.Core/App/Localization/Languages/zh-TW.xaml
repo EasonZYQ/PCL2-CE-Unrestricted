@@ -3163,6 +3163,7 @@
     <sys:String x:Key="Setup.Ui.Theme.Color.CatBlue">龍貓藍</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.CrashBlue">當機藍</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.Apply">套用</sys:String>
+    <sys:String x:Key="Setup.Ui.Theme.Color.Current">當前顏色</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.Delete">刪除</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.Hmcl">HMCL</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.RestoreDefault">恢復初始顏色</sys:String>

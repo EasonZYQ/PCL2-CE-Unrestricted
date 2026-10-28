@@ -3220,6 +3220,7 @@
     <sys:String x:Key="Setup.Ui.Theme.Color.CatBlue">LTCat Blue</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.CrashBlue">Crash Blue</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.Apply">Apply</sys:String>
+    <sys:String x:Key="Setup.Ui.Theme.Color.Current">Current color</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.Delete">Delete</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.Hmcl">HMCL</sys:String>
     <sys:String x:Key="Setup.Ui.Theme.Color.RestoreDefault">Restore default color</sys:String>
